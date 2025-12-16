@@ -1,0 +1,68 @@
+name: CI Docker + Netlify
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: jorge4523/practicanetlify
+  SITE_INDEX: index.html
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Login en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir imagen Docker
+        run: |
+          docker build \
+            -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_NAME:latest \
+            .
+
+      - name: Publicar imagen Docker
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME:latest
+
+      - name: Insertar información del build en index.html
+        run: |
+          BUILD_INFO="\
+          <div style='border:1px solid #ccc;padding:10px;margin-top:20px;'>\
+          <h3>Build Info</h3>\
+          <ul>\
+            <li><strong>Repositorio:</strong> ${{ github.repository }}</li>\
+            <li><strong>Commit:</strong> ${{ github.sha }}</li>\
+            <li><strong>Autor:</strong> ${{ github.actor }}</li>\
+            <li><strong>Fecha:</strong> $(date -u)</li>\
+          </ul>\
+          </div>"
+
+          sed -i "/<!-- BUILD-INFO-START -->/,/<!-- BUILD-INFO-END -->/c\
+          <!-- BUILD-INFO-START -->\
+          $BUILD_INFO\
+          <!-- BUILD-INFO-END -->" $SITE_INDEX
+
+      - name: Commit y push del index.html actualizado
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $SITE_INDEX
+          git commit -m "Actualiza información de build [CI]" || echo "No hay cambios"
+          git push
