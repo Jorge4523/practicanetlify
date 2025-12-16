@@ -47,10 +47,9 @@ jobs:
           <div style='border:1px solid #ccc;padding:10px;margin-top:20px;'>\
           <h3>Build Info</h3>\
           <ul>\
-            <li><strong>Repositorio:</strong> ${{ github.repository }}</li>\
-            <li><strong>Commit:</strong> ${{ github.sha }}</li>\
-            <li><strong>Autor:</strong> ${{ github.actor }}</li>\
-            <li><strong>Fecha:</strong> $(date -u)</li>\
+            <li><strong>Build:</strong> ${{ github.run_number }}</li>\
+            <li><strong>SHA:</strong> ${{ github.sha }}</li>\
+            <li><strong>Image:</strong> $REGISTRY/$IMAGE_NAME:${{ github.sha }}</li>\
           </ul>\
           </div>"
 
@@ -66,3 +65,4 @@ jobs:
           git add $SITE_INDEX
           git commit -m "Actualiza información de build [CI]" || echo "No hay cambios"
           git push
+
